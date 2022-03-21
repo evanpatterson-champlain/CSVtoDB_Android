@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.example.sqliteexample.DBHelper
+import com.example.sqliteexample.DBHelper.Companion.COLUMN_NAMES
 import java.io.*
 
 
@@ -30,13 +31,17 @@ class MainActivity : AppCompatActivity() {
         val data = readCSV()
         setUpDatabase(data)
 
+
         val showInfoText = findViewById<TextView>(R.id.show_info)
 
         viewModel.curID.observe(this, Observer {
-            val input: String? = viewModel.curID.value
+            val input: Int? = viewModel.curID.value
             if (input != null) {
-                val id: Int = input!!.toInt()
+                val id: Int = input!!
                 showInfoText.text = getRow(id)
+            }
+            else {
+                showInfoText.text = ""
             }
         })
 
@@ -79,8 +84,9 @@ class MainActivity : AppCompatActivity() {
 
                 // validate the number
                 if (rowId in minId..max) {
-                    val msg: String = db.getData(rowId).joinToString(", ")
-                    return "Contact info: $msg"
+                    val info: Array<String> = db.getData(rowId)
+                    val msg: String = COLUMN_NAMES.zip(info).joinToString { "\n${it.first}: ${it.second}" }
+                    return "Contact info:\n $msg"
                 }
                 else {
                     return "ID is not in the correct range."
@@ -94,7 +100,15 @@ class MainActivity : AppCompatActivity() {
         val idText = findViewById<EditText>(R.id.enterNumber)
         val enterButton = findViewById<Button>(R.id.enterIdButton)
         enterButton.setOnClickListener {
-            viewModel.curID.value = idText.text.toString()
+            val idTxt: String =  idText.text.toString()
+            if (idTxt.filter { it.isDigit() } == idTxt) {
+                try {
+                    viewModel.curID.value = idTxt.toInt()
+                }
+                catch (nfe:NumberFormatException) {
+                    Log.d("Error", "number entered is not numeric")
+                }
+            }
         }
     }
 

@@ -6,6 +6,6 @@ import androidx.lifecycle.ViewModel
 
 class QueryViewModel : ViewModel() {
 
-    val curID: MutableLiveData<String> = MutableLiveData<String>("")
+    val curID: MutableLiveData<Int> = MutableLiveData<Int>(null)
 
 }
