@@ -16,8 +16,8 @@ import java.io.*
 
 class MainActivity : AppCompatActivity() {
 
-    var database: DBHelper? = null
-    val minId: Int = 1
+    private lateinit var database: DBHelper
+    private val minId: Int = 1
     var maxId: Int? = null
     lateinit var viewModel: QueryViewModel
 
@@ -27,10 +27,10 @@ class MainActivity : AppCompatActivity() {
         viewModel = ViewModelProvider(this).get(QueryViewModel::class.java)
 
         database = DBHelper(this, null)
+        database.refreshDB()
 
-        val data = readCSV()
+        val data = readCSV(loadCSV())
         setUpDatabase(data)
-
 
         val showInfoText = findViewById<TextView>(R.id.show_info)
 
@@ -48,9 +48,12 @@ class MainActivity : AppCompatActivity() {
         setCurrentID()
     }
 
-    private fun readCSV(): List<List<String>> {
+    private fun loadCSV(): BufferedReader {
         val contactsData: InputStream = resources.openRawResource(R.raw.contacts)
-        val buffer = BufferedReader(InputStreamReader(contactsData))
+        return BufferedReader(InputStreamReader(contactsData))
+    }
+
+    private fun readCSV(buffer: BufferedReader): List<List<String>> {
 
         var data: MutableList<List<String>> = mutableListOf()
 
@@ -68,32 +71,31 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setUpDatabase(csvData: List<List<String>>) {
-        if (database != null) {
-            maxId = csvData.size
-            for (line in csvData) {
-                database!!.addData(line)
-            }
+        maxId = csvData.size
+        for (line in csvData) {
+            database.addData(line)
         }
     }
 
     private fun getRow(rowId: Int): String {
-        if (database != null) {
-            val db = database!!
-            if (maxId != null) {
-                val max: Int = maxId!!
+        if (maxId != null) {
+            val max: Int = maxId!!
 
-                // validate the number
-                if (rowId in minId..max) {
-                    val info: Array<String> = db.getData(rowId)
-                    val msg: String = COLUMN_NAMES.zip(info).joinToString { "\n${it.first}: ${it.second}" }
-                    return "Contact info:\n $msg"
-                }
-                else {
-                    return "ID is not in the correct range."
-                }
+            // validate the number
+            if (rowId in minId..max) {
+                val info: Array<String> = database.getData(rowId)
+                val msg: String = COLUMN_NAMES.zip(info).joinToString { "\n${it.first}: ${it.second}" }
+                return "Contact info:\n $msg"
+            }
+            else {
+                return "ID is not in the correct range."
             }
         }
-        return "Data does not exist."
+        else {
+            // if maxId hasn't been set, then the
+            // size of the data is 0
+            return "There is no data to pull from."
+        }
     }
 
     private fun setCurrentID() {

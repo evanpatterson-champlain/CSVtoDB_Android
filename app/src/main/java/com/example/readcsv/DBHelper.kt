@@ -27,14 +27,25 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
             "phone VARCHAR(12), " +
             "email VARCHAR(256)"
 
+        Log.d("Debug", "Creating database")
         db.execSQL("DROP TABLE IF EXISTS $TABLE_NAME")
         db.execSQL("CREATE TABLE $TABLE_NAME($defineColumns)")
     }
 
-    override fun onUpgrade(db: SQLiteDatabase, p1: Int, p2: Int) {
-        // this method is to check if table already exists
+    private fun replaceTable(db: SQLiteDatabase) {
         db.execSQL("DROP TABLE IF EXISTS $TABLE_NAME")
         onCreate(db)
+    }
+
+    fun refreshDB() {
+        val db = this.writableDatabase
+        replaceTable(db)
+        db.close()
+    }
+
+    override fun onUpgrade(db: SQLiteDatabase, p1: Int, p2: Int) {
+        // this method is to check if table already exists
+        replaceTable(db)
     }
 
     // This method is for adding data in our database
@@ -46,9 +57,8 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
 
         // we are inserting our values
         // in the form of key-value pair
-        var i = 0
-        for (col in COLUMN_NAMES) {
-            values.put(col, csvData[i++])
+        for ((i, col) in COLUMN_NAMES.withIndex()) {
+            values.put(col, csvData[i])
         }
 
         // here we are creating a
@@ -80,6 +90,7 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
             val strData: String = cursor.getString(cursor.getColumnIndex(cn).toInt())
             data.add(strData)
         }
+        db.close()
         return data.toTypedArray()
     }
 
